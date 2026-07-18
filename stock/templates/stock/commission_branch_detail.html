@@ -1,0 +1,97 @@
+{% extends 'stock/base.html' %}
+{% block title %}{{ branch.name }} Commission{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">💰 {{ branch.name }}</div><div class="page-sub">{{ branch.location }} · Commission History</div></div>
+  <div style="display:flex;gap:8px;">
+    <a href="{% url 'commission_setting' branch.pk %}" class="btn btn-secondary">⚙️ Edit Rate</a>
+    <a href="{% url 'commission_dashboard' %}" class="btn btn-secondary">← Back</a>
+  </div>
+</div>
+
+{% if setting %}
+<div style="background:var(--brand-light);border:1px solid #b7dfc9;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;gap:28px;flex-wrap:wrap;align-items:center;">
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Type</div><div style="font-weight:700;margin-top:2px;">{{ setting.get_branch_type_display }}</div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Commission Rate</div>
+    <div style="font-weight:700;color:var(--brand);margin-top:2px;">{% if setting.commission_type == 'percentage' %}{{ setting.commission_value }}% of sales{% else %}₹{{ setting.commission_value }} fixed/month{% endif %}</div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Service Charge</div>
+    <div style="font-weight:700;color:var(--brand);margin-top:2px;">{{ setting.service_charge_percent }}% <span style="font-size:11px;color:var(--muted)">(added)</span></div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">TDS</div>
+    <div style="font-weight:700;color:var(--danger);margin-top:2px;">{{ setting.tds_percent }}% <span style="font-size:11px;color:var(--muted)">(deducted)</span></div></div>
+  {% if setting.effective_from %}<div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Effective From</div><div style="font-weight:600;margin-top:2px;">{{ setting.effective_from }}</div></div>{% endif %}
+</div>
+{% else %}
+<div style="background:var(--warn-light);border:1px solid #fed7aa;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--warn);">
+  ⚠️ No commission rate set. <a href="{% url 'commission_setting' branch.pk %}" style="color:var(--warn);font-weight:700;">Set it now →</a>
+</div>
+{% endif %}
+
+<div class="summary-grid">
+  <div class="summary-card gold"><div class="label">Total Net Commission</div><div class="value">₹{{ total|floatformat:0 }}</div><div class="sub">After TDS & SC</div></div>
+  <div class="summary-card green"><div class="label">Total Paid</div><div class="value">₹{{ total_paid|floatformat:0 }}</div><div class="sub">Disbursed</div></div>
+  <div class="summary-card red"><div class="label">Total Pending</div><div class="value">₹{{ total_pending|floatformat:0 }}</div><div class="sub">To be paid</div></div>
+  <div class="summary-card"><div class="label">Months Tracked</div><div class="value">{{ commissions.count }}</div><div class="sub">Commission records</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Monthly Commission Records</div>
+    <div style="display:flex;gap:6px;">
+      <form method="post" action="{% url 'commission_generate' branch.pk %}" style="display:flex;gap:6px;">
+        {% csrf_token %}
+        <select name="month" class="filter-select">{% for i,name in months %}<option value="{{ i }}" {% if i == today.month %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+        <select name="year" class="filter-select">{% for y in years %}<option value="{{ y }}" {% if y == today.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+        <button type="submit" class="btn btn-primary btn-sm">⚡ Generate</button>
+      </form>
+      <button onclick="doExport()" class="btn btn-secondary btn-sm">📥 Excel</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th><th>Total Sales</th><th>Base Comm.</th>
+          <th>SC%</th><th>SC Amount</th><th>Gross</th>
+          <th>TDS%</th><th>TDS Amount</th>
+          <th>Net Commission</th><th>Paid</th><th>Pending</th>
+          <th>Status</th><th>Pay Date</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in commissions %}
+        <tr>
+          <td class="td-bold">{{ m.month_name }} {{ m.year }}</td>
+          <td>₹{{ m.total_sales|floatformat:2 }}</td>
+          <td>₹{{ m.base_commission|floatformat:2 }}</td>
+          <td style="text-align:center;color:var(--brand)">{{ m.service_charge_percent }}%</td>
+          <td style="color:var(--brand)">₹{{ m.service_charge_amount|floatformat:2 }}</td>
+          <td class="td-bold">₹{{ m.gross_commission|floatformat:2 }}</td>
+          <td style="text-align:center;color:var(--danger)">{{ m.tds_percent }}%</td>
+          <td style="color:var(--danger)">₹{{ m.tds_amount|floatformat:2 }}</td>
+          <td class="td-bold" style="color:var(--brand)">₹{{ m.commission_amount|floatformat:2 }}</td>
+          <td style="color:var(--ok)">₹{{ m.amount_paid|floatformat:2 }}</td>
+          <td style="color:{% if m.amount_pending > 0 %}var(--danger){% else %}var(--text){% endif %};font-weight:600">₹{{ m.amount_pending|floatformat:2 }}</td>
+          <td>{% if m.status == 'paid' %}<span class="pill pill-ok">✅ Paid</span>{% elif m.status == 'partial' %}<span class="pill pill-low">⚡ Partial</span>{% else %}<span class="pill pill-out">⏳ Pending</span>{% endif %}</td>
+          <td class="td-muted">{{ m.payment_date|default:"—" }}</td>
+          <td>
+            <div class="actions">
+              <a href="{% url 'commission_pay' m.pk %}" class="btn btn-secondary btn-sm">💳 Pay</a>
+              <a href="{% url 'commission_payout_single' m.pk %}" class="btn btn-primary btn-sm">💸 Payout</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="14" style="text-align:center;padding:30px;color:var(--muted)">No records yet. Click "Generate" to create one.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+function doExport() {
+  const m = document.querySelector('select[name="month"]').value;
+  const y = document.querySelector('select[name="year"]').value;
+  window.location.href = `/commission/export/?month=${m}&year=${y}`;
+}
+</script>
+{% endblock %}

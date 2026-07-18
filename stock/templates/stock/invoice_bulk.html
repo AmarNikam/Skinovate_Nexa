@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Invoice {{ invoice_number }}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f3f4f6;padding:30px;color:#1a1a1a;}
+.invoice-box{max-width:850px;margin:0 auto;background:#fff;padding:48px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.08);}
+.top-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #2d6a4f;}
+.brand{font-size:26px;font-weight:800;color:#2d6a4f;}
+.brand-sub{font-size:12px;color:#6b7280;margin-top:2px;}
+.invoice-meta{text-align:right;font-size:13px;color:#374151;}
+.invoice-meta .inv-title{font-size:20px;font-weight:800;color:#1a1a1a;margin-bottom:6px;}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;}
+thead th{background:#f0fdf4;text-align:left;padding:9px 12px;font-size:10px;font-weight:700;color:#2d6a4f;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid #2d6a4f;white-space:nowrap;}
+tbody td{padding:10px 12px;border-bottom:1px solid #e5e7eb;}
+.text-right{text-align:right;}
+.text-center{text-align:center;}
+.totals{margin-left:auto;width:280px;}
+.totals-row{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;}
+.totals-row.grand{border-top:2px solid #2d6a4f;margin-top:6px;padding-top:12px;font-size:18px;font-weight:800;color:#2d6a4f;}
+.pending-row{color:#c0392b;font-weight:700;}
+.footer-note{margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center;}
+.print-btn{display:block;margin:24px auto 0;padding:12px 28px;background:#2d6a4f;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.print-btn:hover{background:#235c42;}
+@media print {
+  body{background:#fff;padding:0;}
+  .invoice-box{box-shadow:none;padding:20px;}
+  .print-btn{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="invoice-box">
+  <div class="top-row">
+    <div>
+      <div class="brand">✦ Skinovate</div>
+      <div class="brand-sub">Inventory & Sales Management</div>
+    </div>
+    <div class="invoice-meta">
+      <div class="inv-title">COMBINED INVOICE</div>
+      <div>Invoice #: {{ invoice_number }}</div>
+      <div>Generated: {{ generated_on }}</div>
+      <div>{{ sales.count }} transaction(s)</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Customer</th>
+        <th>Product</th>
+        <th class="text-center">Qty</th>
+        <th>Discount On</th>
+        <th class="text-center">Disc %</th>
+        <th class="text-right">Unit Price</th>
+        <th class="text-right">Total</th>
+        <th class="text-right">Received</th>
+        <th class="text-right">Pending</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sales %}
+      <tr>
+        <td>{{ s.date }}</td>
+        <td>{{ s.customer_name }}</td>
+        <td>{{ s.product.name }}</td>
+        <td class="text-center">{{ s.quantity_sold }}</td>
+        <td>{% if s.discount_base == 'MRP' %}MRP{% elif s.discount_base == 'DP' %}DP{% else %}None{% endif %}</td>
+        <td class="text-center">{{ s.discount_percent }}%</td>
+        <td class="text-right">₹{{ s.selling_price|floatformat:2 }}</td>
+        <td class="text-right">₹{{ s.total_sale_value|floatformat:2 }}</td>
+        <td class="text-right">₹{{ s.payment_received|floatformat:2 }}</td>
+        <td class="text-right">₹{{ s.payment_pending|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-row"><span>Total Amount</span><span>₹{{ grand_total|floatformat:2 }}</span></div>
+    <div class="totals-row"><span>Total Received</span><span>₹{{ grand_received|floatformat:2 }}</span></div>
+    {% if grand_pending > 0 %}
+    <div class="totals-row pending-row"><span>Total Pending</span><span>₹{{ grand_pending|floatformat:2 }}</span></div>
+    {% endif %}
+    <div class="totals-row grand"><span>Grand Total</span><span>₹{{ grand_total|floatformat:2 }}</span></div>
+  </div>
+
+  <div class="footer-note">Thank you for your business · Skinovate</div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+</body>
+</html>

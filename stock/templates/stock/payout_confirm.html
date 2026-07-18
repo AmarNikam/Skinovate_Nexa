@@ -1,0 +1,134 @@
+{% extends 'stock/base.html' %}
+{% block title %}Confirm Payout – {{ mc.branch.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">💸 Send Payout</div><div class="page-sub">{{ mc.branch.name }} · {{ mc.month_name }} {{ mc.year }}</div></div>
+  <a href="{% url 'commission_dashboard' %}" class="btn btn-secondary">← Back</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+  <!-- Commission Summary -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="card-header"><div class="card-title">💰 Commission Breakdown</div></div>
+    <div style="padding:18px 20px;">
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted)">Total Sales</span><strong>₹{{ mc.total_sales|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted)">Base Commission</span><strong>₹{{ mc.base_commission|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--brand)">+ Service Charge ({{ mc.service_charge_percent }}%)</span><strong style="color:var(--brand)">₹{{ mc.service_charge_amount|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--muted)">Gross Commission</span><strong>₹{{ mc.gross_commission|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fecaca;font-size:13px;"><span style="color:var(--danger)">− TDS ({{ mc.tds_percent }}%)</span><strong style="color:var(--danger)">₹{{ mc.tds_amount|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:17px;"><span style="font-weight:700">Net Payable</span><strong style="color:var(--brand)">₹{{ mc.commission_amount|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--ok)">Amount Paid So Far</span><strong style="color:var(--ok)">₹{{ mc.amount_paid|floatformat:2 }}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:14px;"><span style="color:var(--danger);font-weight:600">Still Pending</span><strong style="color:var(--danger)">₹{{ mc.amount_pending|floatformat:2 }}</strong></div>
+    </div>
+  </div>
+
+  <!-- Recipient + Payment Options -->
+  <div class="card" style="margin-bottom:0;">
+    <div class="card-header"><div class="card-title">📨 Branch Payment Details</div></div>
+    <div style="padding:18px 20px;">
+
+      <!-- Contact -->
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Contact</div>
+      <div style="font-size:13px;margin-bottom:12px;">
+        {% if mc.branch.email %}
+          <div>📧 <a href="mailto:{{ mc.branch.email }}" style="color:var(--brand)">{{ mc.branch.email }}</a></div>
+        {% else %}
+          <div style="color:var(--warn);">⚠️ No email — using owner: <strong>amarnik88@gmail.com</strong></div>
+        {% endif %}
+        {% if mc.branch.mobile %}
+          <div style="margin-top:4px;">📱 {{ mc.branch.mobile }}</div>
+        {% else %}
+          <div style="color:var(--warn);margin-top:4px;">⚠️ No mobile — using owner: <strong>7021444055</strong></div>
+        {% endif %}
+      </div>
+
+      <!-- Bank Account -->
+      {% if mc.branch.bank_name or mc.branch.account_number %}
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Bank Account (NEFT/RTGS)</div>
+      <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;">
+        <div><strong>{{ mc.branch.bank_name|default:"—" }}</strong></div>
+        <div style="color:var(--muted)">{{ mc.branch.account_holder|default:"—" }}</div>
+        {% if mc.branch.account_number %}<div style="color:var(--muted);">A/C: ****{{ mc.branch.account_number|slice:"-4:" }}</div>{% endif %}
+        {% if mc.branch.ifsc_code %}<div style="color:var(--muted);">IFSC: <strong>{{ mc.branch.ifsc_code }}</strong></div>{% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Online Payment Buttons -->
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Pay Online Now</div>
+      {% if mc.branch.has_online_payment %}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        {% if mc.branch.upi_id %}
+          <a href="upi://pay?pa={{ mc.branch.upi_id }}&pn={{ mc.branch.account_holder|urlencode }}&am={{ mc.amount_pending }}&cu=INR&tn=Commission+{{ mc.month_name }}+{{ mc.year }}"
+             class="btn btn-sm" style="background:#4f46e5;color:#fff;">🔵 UPI — {{ mc.branch.upi_id }}</a>
+        {% endif %}
+        {% if mc.branch.gpay_mobile %}
+          <a href="tez://upi/pay?pa={{ mc.branch.gpay_mobile }}@okaxis&pn={{ mc.branch.account_holder|urlencode }}&am={{ mc.amount_pending }}&cu=INR"
+             class="btn btn-sm" style="background:#34a853;color:#fff;">🟢 GPay {{ mc.branch.gpay_mobile }}</a>
+        {% endif %}
+        {% if mc.branch.paytm_mobile %}
+          <a href="paytmmp://pay?pa={{ mc.branch.paytm_mobile }}@paytm&pn={{ mc.branch.account_holder|urlencode }}&am={{ mc.amount_pending }}&cu=INR"
+             class="btn btn-sm" style="background:#00baf2;color:#fff;">🔵 PayTM {{ mc.branch.paytm_mobile }}</a>
+        {% endif %}
+        {% if mc.branch.phonepe_mobile %}
+          <a href="phonepe://pay?pa={{ mc.branch.phonepe_mobile }}@ybl&pn={{ mc.branch.account_holder|urlencode }}&am={{ mc.amount_pending }}&cu=INR"
+             class="btn btn-sm" style="background:#5f259f;color:#fff;">🟣 PhonePe {{ mc.branch.phonepe_mobile }}</a>
+        {% endif %}
+        {% if mc.branch.payment_link %}
+          <a href="{{ mc.branch.payment_link }}" target="_blank"
+             class="btn btn-sm" style="background:#f59e0b;color:#fff;font-weight:700;">🔗 Open Payment Link</a>
+        {% endif %}
+      </div>
+      <div style="font-size:11px;color:var(--muted);">💡 Amount pre-filled where supported (UPI deep links). Clicking opens your payment app.</div>
+      {% else %}
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;">
+        ⚠️ No online payment details. <a href="{% url 'branch_bank_details' mc.branch.pk %}" style="color:#92400e;font-weight:700;">Add them →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Send notification + mark paid -->
+<div class="card">
+  <div style="padding:18px 20px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Send Payout Notification</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Sends email + SMS to the branch with the full commission breakdown. Payment must be made separately using the buttons above.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'commission_dashboard' %}">
+        <button type="submit" class="btn btn-primary" style="font-size:14px;padding:11px 24px;">
+          📧 Send Email + SMS Notification
+        </button>
+      </form>
+      <a href="{% url 'commission_pay' mc.pk %}" class="btn btn-secondary" style="font-size:14px;padding:11px 24px;">
+        💳 Record Payment Made
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if payout_logs %}
+<div class="card">
+  <div class="card-header"><div class="card-title">📋 Previous Notifications Sent</div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Sent At</th><th>To Email</th><th>To Mobile</th><th>Email Status</th><th>SMS Status</th><th>Sent By</th></tr></thead>
+      <tbody>
+        {% for log in payout_logs %}
+        <tr>
+          <td>{{ log.sent_at|date:"d-M-Y H:i" }}</td>
+          <td class="td-muted">{{ log.sent_to_email }}</td>
+          <td class="td-muted">{{ log.sent_to_mobile }}</td>
+          <td><span class="pill {% if log.email_status == 'sent' %}pill-ok{% elif 'failed' in log.email_status %}pill-out{% else %}pill-low{% endif %}">{{ log.email_status }}</span></td>
+          <td><span class="pill {% if log.sms_status == 'sent' %}pill-ok{% elif 'failed' in log.sms_status %}pill-out{% else %}pill-low{% endif %}">{{ log.sms_status }}</span></td>
+          <td class="td-muted">{{ log.sent_by.username|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

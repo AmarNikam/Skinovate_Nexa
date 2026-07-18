@@ -1,0 +1,36 @@
+{% extends 'stock/base.html' %}
+{% block title %}{{ title }} – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{{ title }}</div></div>
+  <a href="{% url 'product_list' %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="form-card" style="max-width:500px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Product Name *</label>
+      {{ form.name }}
+    </div>
+    <div class="form-group">
+      <label class="form-label">MRP (₹) *</label>
+      {{ form.mrp }}
+      <div class="form-hint">Fixed Maximum Retail Price shown to customers</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DP - Distributor Price (₹) *</label>
+      {{ form.dp }}
+      <div class="form-hint">Can be updated by admin anytime</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Current Stock</label>
+      {{ form.current_stock }}
+      <div class="form-hint">Only change this to manually correct the stock count</div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save</button>
+      <a href="{% url 'product_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

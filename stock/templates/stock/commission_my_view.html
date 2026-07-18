@@ -1,0 +1,64 @@
+{% extends 'stock/base.html' %}
+{% block title %}My Commission – {{ branch.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">💰 My Commission</div><div class="page-sub">{{ branch.name }} · {{ branch.location }}</div></div>
+  <a href="{% url 'branch_my_details' %}" class="btn btn-secondary">🏦 Update My Bank Details</a>
+</div>
+
+{% if setting %}
+<div style="background:var(--brand-light);border:1px solid #b7dfc9;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;gap:28px;flex-wrap:wrap;">
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Type</div><div style="font-weight:700;margin-top:2px;">{{ setting.get_branch_type_display }}</div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">My Rate</div>
+    <div style="font-weight:700;color:var(--brand);margin-top:2px;">{% if setting.commission_type == 'percentage' %}{{ setting.commission_value }}% of monthly sales{% else %}₹{{ setting.commission_value }} fixed/month{% endif %}</div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">Service Charge</div>
+    <div style="font-weight:700;color:var(--brand);margin-top:2px;">+ {{ setting.service_charge_percent }}%</div></div>
+  <div><div class="td-muted" style="font-size:11px;text-transform:uppercase;">TDS Deduction</div>
+    <div style="font-weight:700;color:var(--danger);margin-top:2px;">− {{ setting.tds_percent }}%</div></div>
+</div>
+{% else %}
+<div style="background:var(--warn-light);border:1px solid #fed7aa;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--warn);">
+  ⚠️ Commission rate not yet set for your branch. Please contact the owner.
+</div>
+{% endif %}
+
+<div class="summary-grid">
+  <div class="summary-card gold"><div class="label">Total Earned</div><div class="value">₹{{ total|floatformat:0 }}</div><div class="sub">Net after TDS</div></div>
+  <div class="summary-card green"><div class="label">Total Received</div><div class="value">₹{{ total_paid|floatformat:0 }}</div><div class="sub">Paid to you</div></div>
+  <div class="summary-card red"><div class="label">Pending</div><div class="value">₹{{ total_pending|floatformat:0 }}</div><div class="sub">To be received</div></div>
+  <div class="summary-card"><div class="label">Months</div><div class="value">{{ commissions.count }}</div><div class="sub">Commission records</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">Monthly Commission Breakdown</div></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th><th>My Sales</th><th>Base Commission</th>
+          <th>Service Charge</th><th>Gross</th><th>TDS Deducted</th>
+          <th>Net Commission</th><th>Received</th><th>Pending</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in commissions %}
+        <tr>
+          <td class="td-bold">{{ m.month_name }} {{ m.year }}</td>
+          <td>₹{{ m.total_sales|floatformat:2 }}</td>
+          <td>₹{{ m.base_commission|floatformat:2 }}</td>
+          <td style="color:var(--brand)">+{{ m.service_charge_percent }}% (₹{{ m.service_charge_amount|floatformat:2 }})</td>
+          <td class="td-bold">₹{{ m.gross_commission|floatformat:2 }}</td>
+          <td style="color:var(--danger)">−{{ m.tds_percent }}% (₹{{ m.tds_amount|floatformat:2 }})</td>
+          <td class="td-bold" style="color:var(--brand)">₹{{ m.commission_amount|floatformat:2 }}</td>
+          <td style="color:var(--ok)">₹{{ m.amount_paid|floatformat:2 }}</td>
+          <td style="color:{% if m.amount_pending > 0 %}var(--danger){% else %}var(--text){% endif %};font-weight:600">₹{{ m.amount_pending|floatformat:2 }}</td>
+          <td>{% if m.status == 'paid' %}<span class="pill pill-ok">✅ Paid</span>{% elif m.status == 'partial' %}<span class="pill pill-low">⚡ Partial</span>{% else %}<span class="pill pill-out">⏳ Pending</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">No commission records yet for your branch.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

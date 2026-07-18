@@ -1,0 +1,85 @@
+{% extends 'stock/base.html' %}
+{% block title %}Dashboard – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">📊 Dashboard</div>
+    <div class="page-sub">
+      {% if profile.is_owner %}
+        {% if branch %}Viewing: {{ branch.name }}, {{ branch.location }}{% else %}All branches combined{% endif %}
+      {% else %}
+        {{ profile.branch.name }} · {{ profile.branch.location }}
+      {% endif %}
+    </div>
+  </div>
+  <a href="{% url 'sale_add' %}" class="btn btn-primary">+ Add Sale</a>
+</div>
+
+{% if profile.is_owner %}
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-header">
+    <div class="card-title">🏢 Switch Branch View</div>
+    <span class="td-muted">You are viewing: {% if branch %}{{ branch.name }}{% else %}ALL branches{% endif %}</span>
+  </div>
+  <div style="padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap;">
+    <a href="{% url 'switch_branch' 0 %}" class="btn {% if not active_branch_id %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">🌐 All Branches</a>
+    {% for b in all_branches %}
+    <a href="{% url 'switch_branch' b.pk %}" class="btn {% if active_branch_id == b.pk %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      📍 {{ b.name }}
+    </a>
+    {% endfor %}
+    <a href="{% url 'branch_list' %}" class="btn btn-owner btn-sm" style="margin-left:auto;">⚙️ Manage Branches</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="summary-grid">
+  <div class="summary-card green">
+    <div class="label">Payment Received</div>
+    <div class="value">₹{{ total_revenue|floatformat:0 }}</div>
+    <div class="sub">{{ total_sales_count }} sale entries</div>
+  </div>
+  <div class="summary-card red">
+    <div class="label">Payment Pending</div>
+    <div class="value">₹{{ total_pending|floatformat:0 }}</div>
+    <div class="sub">To be collected</div>
+  </div>
+  <div class="summary-card gold">
+    <div class="label">Total Purchased</div>
+    <div class="value">₹{{ total_purchase_val|floatformat:0 }}</div>
+    <div class="sub">All purchase entries</div>
+  </div>
+  <div class="summary-card {% if out_count > 0 %}red{% elif low_count > 0 %}gold{% else %}green{% endif %}">
+    <div class="label">Stock Alerts</div>
+    <div class="value">{{ out_count }} OUT</div>
+    <div class="sub">{{ low_count }} low stock products</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔔 Current Stock Status</div>
+    <a href="{% url 'stock_alert' %}" class="btn btn-secondary btn-sm">Full Alerts →</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Product</th><th>Current Stock</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td class="td-muted">{{ forloop.counter }}</td>
+          <td class="td-bold">{{ p.name }}</td>
+          <td style="text-align:center;font-weight:700;color:{% if p.current_stock <= 0 %}var(--danger){% elif p.current_stock <= 5 %}var(--warn){% else %}var(--ok){% endif %}">{{ p.current_stock }}</td>
+          <td>
+            {% if p.stock_status == 'OUT' %}<span class="pill pill-out">⛔ OUT</span>
+            {% elif p.stock_status == 'LOW' %}<span class="pill pill-low">⚠️ LOW</span>
+            {% else %}<span class="pill pill-ok">✅ OK</span>{% endif %}
+          </td>
+          <td><a href="{% url 'stockin_add' %}" class="btn btn-secondary btn-sm">+ Add Stock</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

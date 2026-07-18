@@ -1,0 +1,33 @@
+{% extends 'stock/base.html' %}
+{% block title %}Payout Logs – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">📋 Payout Notification Logs</div><div class="page-sub">All payout notifications sent</div></div>
+  <a href="{% url 'commission_dashboard' %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Sent At</th><th>Branch</th><th>Period</th><th>Net Commission</th><th>To Email</th><th>To Mobile</th><th>Email</th><th>SMS</th><th>Sent By</th><th>Notes</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.sent_at|date:"d-M-Y H:i" }}</td>
+          <td class="td-bold">{{ log.monthly_commission.branch.name }}</td>
+          <td>{{ log.monthly_commission.month_name }} {{ log.monthly_commission.year }}</td>
+          <td class="td-bold" style="color:var(--brand)">₹{{ log.monthly_commission.commission_amount|floatformat:2 }}</td>
+          <td class="td-muted">{{ log.sent_to_email }}</td>
+          <td class="td-muted">{{ log.sent_to_mobile }}</td>
+          <td><span class="pill {% if log.email_status == 'sent' %}pill-ok{% elif 'failed' in log.email_status %}pill-out{% elif log.email_status == 'demo_mode' %}pill-low{% else %}pill-low{% endif %}">{{ log.email_status }}</span></td>
+          <td><span class="pill {% if log.sms_status == 'sent' %}pill-ok{% elif 'failed' in log.sms_status %}pill-out{% elif log.sms_status == 'demo_mode' %}pill-low{% else %}pill-low{% endif %}">{{ log.sms_status }}</span></td>
+          <td class="td-muted">{{ log.sent_by.username|default:"—" }}</td>
+          <td class="td-muted" style="font-size:11px;max-width:180px;">{{ log.notes|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted)">No payout notifications sent yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

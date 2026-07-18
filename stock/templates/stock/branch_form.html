@@ -1,0 +1,39 @@
+{% extends 'stock/base.html' %}
+{% block title %}{{ title }} – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{{ title }}</div></div>
+  <a href="{% url 'branch_list' %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="form-card" style="max-width:560px;">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Branch Name *</label>
+      {{ form.name }}
+      <div class="form-hint">e.g. Nerul Branch 1, Thane Main</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Location / City *</label>
+      {{ form.location }}
+      <div class="form-hint">e.g. Nerul, Thane, Panvel</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Full Address</label>
+      {{ form.address }}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone Number</label>
+      {{ form.phone }}
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      {{ form.is_active }}
+      <label class="form-label" style="margin-bottom:0;">Branch is Active</label>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save Branch</button>
+      <a href="{% url 'branch_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

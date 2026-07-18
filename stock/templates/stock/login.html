@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login – Skinovate</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f7f5f2;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-wrap{width:100%;max-width:460px;}
+.login-card{background:#fff;border-radius:16px;border:1px solid #e5e7eb;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,.08);margin-bottom:16px;}
+.logo{font-size:28px;font-weight:800;color:#2d6a4f;text-align:center;margin-bottom:4px;}
+.tagline{font-size:13px;color:#6b7280;text-align:center;margin-bottom:28px;}
+.form-group{margin-bottom:16px;}
+label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+input{width:100%;padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border .15s;}
+input:focus{border-color:#2d6a4f;}
+.btn{width:100%;padding:12px;background:#2d6a4f;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px;}
+.btn:hover{background:#235c42;}
+.error{background:#fdecea;color:#c0392b;border:1px solid #fecaca;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;}
+/* Credentials card */
+.cred-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.cred-section{padding:12px 16px;border-bottom:1px solid #f3f4f6;}
+.cred-section:last-child{border-bottom:none;}
+.cred-title{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.cred-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:12px;padding:4px 0;border-bottom:1px solid #f9fafb;}
+.cred-row:last-child{border-bottom:none;}
+.cred-row .branch{color:#374151;font-weight:600;}
+.cred-row .uname{color:#2d6a4f;font-family:monospace;font-size:11px;}
+.cred-row .pwd{color:#6b7280;font-family:monospace;font-size:11px;}
+.owner-row{background:#fffbeb;border-radius:6px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:4px;}
+.owner-row .uname{color:#92400e;font-family:monospace;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="logo">✦ Skinovate</div>
+    <div class="tagline">Inventory Management System</div>
+    {% for msg in messages %}<div class="error">{{ msg }}</div>{% endfor %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" autofocus placeholder="Enter username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password">
+      </div>
+      <button type="submit" class="btn">Login →</button>
+    </form>
+  </div>
+
+  <div class="cred-card">
+    <div class="cred-section">
+      <div class="cred-title">👑 Owner / Admin Access (all branches)</div>
+      <div class="owner-row"><span>Skinovate Owner</span><span class="uname">owner</span><span class="uname">owner@123</span></div>
+      <div class="owner-row"><span>Admin</span><span class="uname">admin</span><span class="uname">admin123</span></div>
+    </div>
+    <div class="cred-section">
+      <div class="cred-title">📍 Branch Logins (individual branch access)</div>
+      <div class="cred-row" style="font-weight:700;color:#9ca3af;font-size:10px;"><span>Branch</span><span>Username</span><span>Password</span></div>
+      <div class="cred-row"><span class="branch">Nerul Branch 1</span><span class="uname">nerul1</span><span class="pwd">nerul1@123</span></div>
+      <div class="cred-row"><span class="branch">Nerul Branch 2</span><span class="uname">nerul2</span><span class="pwd">nerul2@123</span></div>
+      <div class="cred-row"><span class="branch">Nerul Branch 3</span><span class="uname">nerul3</span><span class="pwd">nerul3@123</span></div>
+      <div class="cred-row"><span class="branch">Thane Branch 1</span><span class="uname">thane1</span><span class="pwd">thane1@123</span></div>
+      <div class="cred-row"><span class="branch">Thane Branch 2</span><span class="uname">thane2</span><span class="pwd">thane2@123</span></div>
+      <div class="cred-row"><span class="branch">Panvel Branch 1</span><span class="uname">panvel1</span><span class="pwd">panvel1@123</span></div>
+      <div class="cred-row"><span class="branch">Panvel Branch 2</span><span class="uname">panvel2</span><span class="pwd">panvel2@123</span></div>
+      <div class="cred-row"><span class="branch">Panvel Branch 3</span><span class="uname">panvel3</span><span class="pwd">panvel3@123</span></div>
+      <div class="cred-row"><span class="branch">Panvel Branch 4</span><span class="uname">panvel4</span><span class="pwd">panvel4@123</span></div>
+      <div class="cred-row"><span class="branch">Panvel Branch 5</span><span class="uname">panvel5</span><span class="pwd">panvel5@123</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

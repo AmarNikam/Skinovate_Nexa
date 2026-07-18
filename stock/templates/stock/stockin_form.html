@@ -1,0 +1,43 @@
+{% extends 'stock/base.html' %}
+{% block title %}{{ title }} – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{{ title }}</div><div class="page-sub">Stock will be updated automatically</div></div>
+  <a href="{% url 'stockin_list' %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="form-card">
+  <div style="background:var(--brand-light);border:1px solid #b7dfc9;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--brand)">
+    💡 When you add stock here, the product's current stock will automatically increase.
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Product *</label>
+        {{ form.product }}
+        {% if form.product.errors %}<ul class="error-list">{% for e in form.product.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        {{ form.date }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quantity In *</label>
+        {{ form.quantity_in }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Purchase Price (per unit) *</label>
+        {{ form.purchase_price }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supplier</label>
+        {{ form.supplier }}
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save</button>
+      <a href="{% url 'stockin_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

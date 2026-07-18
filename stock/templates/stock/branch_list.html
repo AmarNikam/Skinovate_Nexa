@@ -1,0 +1,107 @@
+{% extends 'stock/base.html' %}
+{% block title %}Branches – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">🏢 Branch Management</div><div class="page-sub">Add, edit, delete branches and assign staff</div></div>
+  <a href="{% url 'branch_add' %}" class="btn btn-primary">+ Add Branch</a>
+</div>
+
+{% for item in branch_data %}
+<div class="card">
+  <div class="card-header">
+    <div>
+      <div class="card-title">
+        📍 {{ item.branch.name }}
+        <span class="pill pill-branch" style="margin-left:8px;">{{ item.branch.location }}</span>
+        {% if not item.branch.is_active %}<span class="pill pill-out" style="margin-left:4px;">Inactive</span>{% endif %}
+        {% if item.branch.bank_details_updated_at %}
+          <span style="font-size:11px;color:var(--ok);margin-left:8px;font-weight:500;">✅ Bank details updated {{ item.branch.bank_details_updated_at|date:"d M Y" }}</span>
+        {% else %}
+          <span style="font-size:11px;color:var(--warn);margin-left:8px;">⚠️ No bank details yet</span>
+        {% endif %}
+      </div>
+      <div class="td-muted" style="margin-top:4px;font-size:12px;">{{ item.branch.address }}</div>
+    </div>
+    <div class="actions">
+      <a href="{% url 'switch_branch' item.branch.pk %}" class="btn btn-secondary btn-sm">👁 View Data</a>
+      <a href="{% url 'branch_assign_user' item.branch.pk %}" class="btn btn-secondary btn-sm">👤 Assign</a>
+      <a href="{% url 'branch_bank_details' item.branch.pk %}" class="btn btn-secondary btn-sm">🏦 Bank & Pay</a>
+      <a href="{% url 'branch_edit' item.branch.pk %}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+      <a href="{% url 'branch_delete' item.branch.pk %}" class="btn btn-danger btn-sm">🗑️</a>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div style="padding:12px 20px;display:flex;gap:28px;font-size:13px;background:#fafafa;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;">
+    <div><span class="td-muted">Sales:</span> <strong>{{ item.sales_count }}</strong></div>
+    <div><span class="td-muted">Stock:</span> <strong>{{ item.stockin_count }}</strong></div>
+    <div><span class="td-muted">Staff:</span> <strong>{{ item.users.count }}</strong></div>
+    {% if item.branch.phone %}<div><span class="td-muted">📞</span> {{ item.branch.phone }}</div>{% endif %}
+    {% if item.branch.email %}<div><span class="td-muted">📧</span> <a href="mailto:{{ item.branch.email }}" style="color:var(--brand)">{{ item.branch.email }}</a></div>{% endif %}
+    {% if item.branch.mobile %}<div><span class="td-muted">📱</span> {{ item.branch.mobile }}</div>{% endif %}
+  </div>
+
+  <!-- Online payment options row -->
+  {% if item.branch.has_online_payment %}
+  <div style="padding:10px 20px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <span style="font-size:12px;font-weight:700;color:var(--ok);">💸 Pay Online:</span>
+    {% if item.branch.upi_id %}
+      <a href="upi://pay?pa={{ item.branch.upi_id }}&pn={{ item.branch.account_holder|urlencode }}&cu=INR"
+         class="btn btn-sm" style="background:#4f46e5;color:#fff;gap:4px;">🔵 UPI Pay</a>
+    {% endif %}
+    {% if item.branch.gpay_mobile %}
+      <a href="tez://upi/pay?pa={{ item.branch.gpay_mobile }}@okaxis&pn={{ item.branch.account_holder|urlencode }}&cu=INR"
+         class="btn btn-sm" style="background:#34a853;color:#fff;">🟢 GPay</a>
+    {% endif %}
+    {% if item.branch.paytm_mobile %}
+      <a href="paytmmp://pay?pa={{ item.branch.paytm_mobile }}@paytm&pn={{ item.branch.account_holder|urlencode }}&cu=INR"
+         class="btn btn-sm" style="background:#00baf2;color:#fff;">🔵 PayTM</a>
+    {% endif %}
+    {% if item.branch.phonepe_mobile %}
+      <a href="phonepe://pay?pa={{ item.branch.phonepe_mobile }}@ybl&pn={{ item.branch.account_holder|urlencode }}&cu=INR"
+         class="btn btn-sm" style="background:#5f259f;color:#fff;">🟣 PhonePe</a>
+    {% endif %}
+    {% if item.branch.payment_link %}
+      <a href="{{ item.branch.payment_link }}" target="_blank"
+         class="btn btn-sm" style="background:#f59e0b;color:#fff;">🔗 Payment Link</a>
+    {% endif %}
+    {% if item.branch.bank_name %}
+      <span style="font-size:12px;color:var(--muted);margin-left:4px;">
+        🏦 {{ item.branch.bank_name }}
+        {% if item.branch.account_number %} · A/C ****{{ item.branch.account_number|slice:"-4:" }}{% endif %}
+        {% if item.branch.ifsc_code %} · {{ item.branch.ifsc_code }}{% endif %}
+      </span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Staff table -->
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Username</th><th>Role</th><th>Email</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for up in item.users %}
+        <tr>
+          <td class="td-bold">{{ up.user.username }}</td>
+          <td><span class="pill {% if up.role == 'manager' %}pill-mrp{% else %}pill-ok{% endif %}">{{ up.get_role_display }}</span></td>
+          <td class="td-muted">{{ up.user.email|default:'—' }}</td>
+          <td>
+            <form method="post" action="{% url 'branch_remove_user' item.branch.pk up.user.pk %}" style="display:inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remove {{ up.user.username }} from this branch?')">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="color:var(--muted);padding:14px 20px;font-size:13px;">No staff assigned — click "Assign" to add someone.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="card" style="padding:40px;text-align:center;color:var(--muted);">
+  No branches yet. <a href="{% url 'branch_add' %}" style="color:var(--brand);">Add your first branch →</a>
+</div>
+{% endfor %}
+{% endblock %}

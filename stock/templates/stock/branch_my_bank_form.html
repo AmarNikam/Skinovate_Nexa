@@ -1,0 +1,120 @@
+{% extends 'stock/base.html' %}
+{% block title %}My Bank & Payment Details – {{ branch.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">🏦 My Bank & Payment Details</div>
+    <div class="page-sub">{{ branch.name }} · {{ branch.location }} — Changes are instantly visible to the owner</div>
+  </div>
+</div>
+
+<div style="background:var(--brand-light);border:1px solid #b7dfc9;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--brand);display:flex;gap:10px;align-items:flex-start;">
+  <span style="font-size:18px;">ℹ️</span>
+  <div>
+    <strong>Your changes update live for the owner.</strong><br>
+    When you save, the owner will immediately see your updated bank details and can use them to process your commission payout. You can update your email, mobile, bank account, IFSC code, and online payment options here.
+  </div>
+</div>
+
+{% if branch.bank_details_updated_at %}
+<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:12px;color:#92400e;">
+  🕐 Last updated: <strong>{{ branch.bank_details_updated_at|date:"d M Y, H:i" }}</strong>
+  by <strong>{{ branch.bank_details_updated_by.username|default:"—" }}</strong>
+</div>
+{% endif %}
+
+<div class="form-card" style="max-width:720px;">
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Contact -->
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--border);">
+      📞 Contact Details <span style="font-weight:400;color:var(--muted)">(used for payout notifications)</span>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        {{ form.email }}
+        <div class="form-hint">Payout notification email is sent here</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mobile Number *</label>
+        {{ form.mobile }}
+        <div class="form-hint">SMS alert is sent here when payout is processed</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (optional)</label>
+        {{ form.phone }}
+      </div>
+    </div>
+
+    <!-- Bank Account -->
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--border);">
+      🏦 Bank Account <span style="font-weight:400;color:var(--muted)">(for NEFT / RTGS)</span>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Bank Name</label>
+        {{ form.bank_name }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account Holder Name</label>
+        {{ form.account_holder }}
+        <div class="form-hint">Exactly as printed on your passbook</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        {{ form.account_number }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">IFSC Code</label>
+        {{ form.ifsc_code }}
+        <div class="form-hint">11-character code — check your cheque book or net banking</div>
+      </div>
+    </div>
+
+    <!-- Online Payment Options -->
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--border);">
+      📱 Online Payment Options <span style="font-weight:400;color:var(--muted)">(owner can pay directly using these)</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ok);margin-bottom:8px;">🔵 UPI ID</div>
+        {{ form.upi_id }}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Works across all UPI apps — e.g. name@okaxis</div>
+      </div>
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#0369a1;margin-bottom:8px;">🟢 Google Pay</div>
+        {{ form.gpay_mobile }}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Mobile number linked to Google Pay</div>
+      </div>
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--warn);margin-bottom:8px;">🔵 PayTM</div>
+        {{ form.paytm_mobile }}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Mobile number linked to PayTM</div>
+      </div>
+      <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:8px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:8px;">🟣 PhonePe</div>
+        {{ form.phonepe_mobile }}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Mobile number linked to PhonePe</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">🔗 Payment Link <span style="color:var(--muted);font-weight:400">(Razorpay / PayTM / any payment gateway)</span></label>
+      {{ form.payment_link }}
+      <div class="form-hint">Paste your payment link here — owner can click it to pay you directly online</div>
+    </div>
+
+    <div style="background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:16px 0;font-size:12px;color:var(--muted);">
+      🔒 <strong>Security note:</strong> Your bank account number is stored securely and shown to the owner in masked form (last 4 digits only). Only authorised Skinovate staff can access these details.
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save & Notify Owner</button>
+      <a href="{% url 'commission_my_view' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

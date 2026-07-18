@@ -1,0 +1,162 @@
+{% extends 'stock/base.html' %}
+{% block title %}Commission – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">💰 Commission Management</div><div class="page-sub">Branch & franchise commission — with TDS & service charge</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <form method="post" action="{% url 'commission_generate_all' %}" style="display:flex;gap:6px;align-items:center;">
+      {% csrf_token %}
+      <select name="month" class="filter-select">{% for i,name in months %}<option value="{{ i }}" {% if i == today.month %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+      <select name="year" class="filter-select">{% for y in years %}<option value="{{ y }}" {% if y == today.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+      <button type="submit" class="btn btn-primary">⚡ Generate All</button>
+    </form>
+    <form method="post" action="{% url 'commission_payout_all' %}" style="display:flex;gap:6px;align-items:center;">
+      {% csrf_token %}
+      <select name="month" class="filter-select">{% for i,name in months %}<option value="{{ i }}" {% if i == today.month %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+      <select name="year" class="filter-select">{% for y in years %}<option value="{{ y }}" {% if y == today.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+      <button type="submit" class="btn btn-secondary" onclick="return confirm('Send payout notifications to ALL branches for selected month?')">💸 Payout All</button>
+    </form>
+    <a href="{% url 'payout_log_list' %}" class="btn btn-secondary">📋 Payout Logs</a>
+    <a href="{% url 'commission_export_excel' %}?month={{ today.month }}&year={{ today.year }}"
+       id="export-link" class="btn btn-secondary">📥 Export Excel</a>
+  </div>
+</div>
+
+<!-- Export month/year selector -->
+<div class="card" style="margin-bottom:16px;">
+  <div style="padding:14px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fafafa;">
+    <span style="font-size:13px;font-weight:600;color:var(--muted);">📥 Export commission to Excel:</span>
+    <select id="exp-month" class="filter-select">{% for i,name in months %}<option value="{{ i }}" {% if i == today.month %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+    <select id="exp-year" class="filter-select">{% for y in years %}<option value="{{ y }}" {% if y == today.year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+    <button onclick="doExport()" class="btn btn-primary btn-sm">📥 Download Excel</button>
+    <span style="font-size:12px;color:var(--muted);">Downloads branch-wise commission with TDS & service charge breakdown</span>
+  </div>
+</div>
+
+<div class="summary-grid">
+  <div class="summary-card gold"><div class="label">Total Commission</div><div class="value">₹{{ total_commission|floatformat:0 }}</div><div class="sub">Net payable, all time</div></div>
+  <div class="summary-card green"><div class="label">Total Paid</div><div class="value">₹{{ total_paid|floatformat:0 }}</div><div class="sub">Commissions disbursed</div></div>
+  <div class="summary-card red"><div class="label">Total Pending</div><div class="value">₹{{ total_pending|floatformat:0 }}</div><div class="sub">Yet to be paid</div></div>
+  <div class="summary-card"><div class="label">Active Branches</div><div class="value">{{ branch_summary|length }}</div><div class="sub">With commission settings</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">📊 Branch-wise Commission Summary</div></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Branch</th><th>Type</th><th>Rate</th><th>TDS</th><th>SC</th>
+          <th>Total Comm.</th><th>Paid</th><th>Pending</th><th>Months Pending</th>
+          <th>Contact</th><th>Bank Details</th><th>Online Pay</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in branch_summary %}
+        <tr>
+          <td class="td-bold">{{ item.branch.name }}<div class="td-muted">{{ item.branch.location }}</div></td>
+          <td>{% if item.setting %}<span class="pill {% if item.setting.branch_type == 'franchise' %}pill-sample{% else %}pill-mrp{% endif %}">{{ item.setting.get_branch_type_display }}</span>{% else %}<span class="td-muted">Not set</span>{% endif %}</td>
+          <td>{% if item.setting %}{% if item.setting.commission_type == 'percentage' %}<strong>{{ item.setting.commission_value }}%</strong>{% else %}<strong>₹{{ item.setting.commission_value }}</strong>/mo{% endif %}{% else %}<a href="{% url 'commission_setting' item.branch.pk %}" style="color:var(--warn)">⚙️ Set</a>{% endif %}</td>
+          <td class="td-muted">{% if item.setting and item.setting.tds_percent > 0 %}<span style="color:var(--danger);font-weight:600">{{ item.setting.tds_percent }}%</span>{% else %}—{% endif %}</td>
+          <td class="td-muted">{% if item.setting and item.setting.service_charge_percent > 0 %}<span style="color:var(--brand);font-weight:600">{{ item.setting.service_charge_percent }}%</span>{% else %}—{% endif %}</td>
+          <td class="td-bold">₹{{ item.total|floatformat:2 }}</td>
+          <td style="color:var(--ok)">₹{{ item.paid|floatformat:2 }}</td>
+          <td style="color:{% if item.pending > 0 %}var(--danger){% else %}var(--text){% endif %};font-weight:700">₹{{ item.pending|floatformat:2 }}</td>
+          <td style="text-align:center">{% if item.pending_months > 0 %}<span class="pill pill-out">{{ item.pending_months }} month{{ item.pending_months|pluralize }}</span>{% else %}<span class="pill pill-ok">All clear</span>{% endif %}</td>
+
+          <!-- Contact -->
+          <td style="font-size:12px;min-width:150px;">
+            {% if item.branch.email %}<div>📧 <a href="mailto:{{ item.branch.email }}" style="color:var(--brand)">{{ item.branch.email }}</a></div>{% else %}<div class="td-muted">📧 —</div>{% endif %}
+            {% if item.branch.mobile %}<div>📱 {{ item.branch.mobile }}</div>{% else %}<div class="td-muted">📱 —</div>{% endif %}
+          </td>
+
+          <!-- Bank Details -->
+          <td style="font-size:12px;min-width:170px;">
+            {% if item.branch.bank_name %}
+              <div class="td-bold">{{ item.branch.bank_name }}</div>
+              <div class="td-muted">{{ item.branch.account_holder }}</div>
+              {% if item.branch.account_number %}<div class="td-muted">A/C ****{{ item.branch.account_number|slice:"-4:" }}</div>{% endif %}
+              {% if item.branch.ifsc_code %}<div class="td-muted">IFSC: {{ item.branch.ifsc_code }}</div>{% endif %}
+              {% if item.branch.bank_details_updated_at %}<div style="font-size:10px;color:var(--ok);margin-top:2px;">✅ Updated {{ item.branch.bank_details_updated_at|date:"d M Y" }}</div>{% endif %}
+            {% else %}
+              <a href="{% url 'branch_bank_details' item.branch.pk %}" style="color:var(--warn);font-size:12px;">⚠️ Not filled — Add</a>
+            {% endif %}
+          </td>
+
+          <!-- Online Payment -->
+          <td style="min-width:140px;">
+            {% if item.branch.has_online_payment %}
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                {% if item.branch.upi_id %}<a href="upi://pay?pa={{ item.branch.upi_id }}&pn={{ item.branch.account_holder|urlencode }}&cu=INR" class="btn btn-sm" style="background:#4f46e5;color:#fff;padding:3px 8px;font-size:10px;">🔵 UPI</a>{% endif %}
+                {% if item.branch.gpay_mobile %}<a href="tez://upi/pay?pa={{ item.branch.gpay_mobile }}@okaxis&pn={{ item.branch.account_holder|urlencode }}&cu=INR" class="btn btn-sm" style="background:#34a853;color:#fff;padding:3px 8px;font-size:10px;">🟢 GPay</a>{% endif %}
+                {% if item.branch.paytm_mobile %}<a href="paytmmp://pay?pa={{ item.branch.paytm_mobile }}@paytm&pn={{ item.branch.account_holder|urlencode }}&cu=INR" class="btn btn-sm" style="background:#00baf2;color:#fff;padding:3px 8px;font-size:10px;">🔵 PayTM</a>{% endif %}
+                {% if item.branch.phonepe_mobile %}<a href="phonepe://pay?pa={{ item.branch.phonepe_mobile }}@ybl&pn={{ item.branch.account_holder|urlencode }}&cu=INR" class="btn btn-sm" style="background:#5f259f;color:#fff;padding:3px 8px;font-size:10px;">🟣 PhonePe</a>{% endif %}
+                {% if item.branch.payment_link %}<a href="{{ item.branch.payment_link }}" target="_blank" class="btn btn-sm" style="background:#f59e0b;color:#fff;padding:3px 8px;font-size:10px;">🔗 Link</a>{% endif %}
+              </div>
+            {% else %}
+              <span class="td-muted" style="font-size:12px;">None set</span>
+            {% endif %}
+          </td>
+
+          <td><div class="actions">
+            <a href="{% url 'commission_branch_detail' item.branch.pk %}" class="btn btn-secondary btn-sm">📋 Details</a>
+            <a href="{% url 'commission_setting' item.branch.pk %}" class="btn btn-secondary btn-sm">⚙️ Rate</a>
+          </div></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="13" style="text-align:center;padding:40px;color:var(--muted)">No branches found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">🕐 Recent Commission Records</div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Branch</th><th>Month</th><th>Sales</th><th>Base Comm.</th><th>SC</th><th>Gross</th><th>TDS</th><th>Net Commission</th><th>Paid</th><th>Pending</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for m in recent %}
+        <tr>
+          <td class="td-bold">{{ m.branch.name }}</td>
+          <td>{{ m.month_name }} {{ m.year }}</td>
+          <td>₹{{ m.total_sales|floatformat:0 }}</td>
+          <td>₹{{ m.base_commission|floatformat:2 }}</td>
+          <td class="td-muted">{{ m.service_charge_percent }}% (₹{{ m.service_charge_amount|floatformat:2 }})</td>
+          <td>₹{{ m.gross_commission|floatformat:2 }}</td>
+          <td style="color:var(--danger)">{{ m.tds_percent }}% (₹{{ m.tds_amount|floatformat:2 }})</td>
+          <td class="td-bold" style="color:var(--brand)">₹{{ m.commission_amount|floatformat:2 }}</td>
+          <td style="color:var(--ok)">₹{{ m.amount_paid|floatformat:2 }}</td>
+          <td style="color:{% if m.amount_pending > 0 %}var(--danger){% else %}var(--text){% endif %}">₹{{ m.amount_pending|floatformat:2 }}</td>
+          <td>{% if m.status == 'paid' %}<span class="pill pill-ok">✅ Paid</span>{% elif m.status == 'partial' %}<span class="pill pill-low">⚡ Partial</span>{% else %}<span class="pill pill-out">⏳ Pending</span>{% endif %}</td>
+          <td>
+            <div class="actions">
+              <a href="{% url 'commission_pay' m.pk %}" class="btn btn-secondary btn-sm">💳 Pay</a>
+              <a href="{% url 'commission_payout_single' m.pk %}" class="btn btn-primary btn-sm">💸 Payout</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted)">No commissions yet. Use "⚡ Generate All" above.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function doExport() {
+  const m = document.getElementById('exp-month').value;
+  const y = document.getElementById('exp-year').value;
+  window.location.href = `/commission/export/?month=${m}&year=${y}`;
+}
+// Sync generate form selectors with export selectors
+document.querySelectorAll('select[name="month"]').forEach(s => s.addEventListener('change', function(){
+  document.getElementById('exp-month').value = this.value;
+}));
+document.querySelectorAll('select[name="year"]').forEach(s => s.addEventListener('change', function(){
+  document.getElementById('exp-year').value = this.value;
+}));
+</script>
+{% endblock %}

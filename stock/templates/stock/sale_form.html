@@ -1,0 +1,151 @@
+{% extends 'stock/base.html' %}
+{% block title %}{{ title }} – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">{{ title }}</div><div class="page-sub">Stock reduces automatically when sale is saved</div></div>
+  <a href="{% url 'sale_list' %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="form-card">
+  <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--warn)">
+    ⚠️ Saving this sale will <strong>reduce the product's stock</strong> by the quantity sold automatically.
+  </div>
+  <form method="post" id="sale-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Product *</label>
+        {{ form.product }}
+        {% if form.product.errors %}<ul class="error-list">{% for e in form.product.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        <div class="form-hint" id="price-hint">Select a product to see MRP &amp; DP</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        {{ form.date }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Customer Name *</label>
+        {{ form.customer_name }}
+        {% if form.customer_name.errors %}<ul class="error-list">{% for e in form.customer_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quantity Sold *</label>
+        {{ form.quantity_sold }}
+        {% if form.quantity_sold.errors %}<ul class="error-list">{% for e in form.quantity_sold.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        <div class="form-hint">Check Stock Alerts page to see current available stock</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sale Type (label only)</label>
+        {{ form.sale_type }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Discount On *</label>
+        {{ form.discount_base }}
+        <div class="form-hint">Choose whether discount applies on MRP or DP</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Discount % </label>
+        {{ form.discount_percent }}
+        <div class="form-hint">e.g. 20 = 20% off the chosen base price</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Received ₹</label>
+        {{ form.payment_received }}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Pending ₹</label>
+        {{ form.payment_pending }}
+      </div>
+    </div>
+
+    <div id="calc-box" style="background:var(--brand-light);border:1px solid #b7dfc9;border-radius:8px;padding:14px 18px;margin:8px 0 20px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Product MRP:</span><strong id="calc-mrp">₹0</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Product DP:</span><strong id="calc-dp">₹0</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Base Price Used:</span><strong id="calc-base">–</strong></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Discount:</span><strong id="calc-discount">0%</strong></div>
+      <hr style="border:none;border-top:1px solid #b7dfc9;margin:8px 0;">
+      <div style="display:flex;justify-content:space-between;font-size:15px;"><span>Selling Price / unit:</span><strong id="calc-selling" style="color:var(--brand)">₹0</strong></div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;"><span>Total ({{ form.quantity_sold.value|default:'0' }} units):</span><strong id="calc-total" style="color:var(--brand)">₹0</strong></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description / Notes</label>
+      {{ form.description }}
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">💾 Save Sale</button>
+      <a href="{% url 'sale_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+const PRODUCT_PRICES = {
+  {% for p in products %}"{{ p.id }}": {mrp: {{ p.mrp }}, dp: {{ p.dp }}}{% if not forloop.last %},{% endif %}{% endfor %}
+};
+
+function updateCalc() {
+  const productSelect = document.getElementById('id_product');
+  const qtyInput = document.getElementById('id_quantity_sold');
+  const baseSelect = document.getElementById('id_discount_base');
+  const discInput = document.getElementById('id_discount_percent');
+
+  const pid = productSelect.value;
+  const qty = parseFloat(qtyInput.value) || 0;
+  const base = baseSelect.value;
+  const disc = parseFloat(discInput.value) || 0;
+
+  const prices = PRODUCT_PRICES[pid] || {mrp: 0, dp: 0};
+  document.getElementById('calc-mrp').textContent = '₹' + prices.mrp.toFixed(2);
+  document.getElementById('calc-dp').textContent = '₹' + prices.dp.toFixed(2);
+
+  let basePrice = 0;
+  let baseLabel = '–';
+  if (base === 'MRP') { basePrice = prices.mrp; baseLabel = 'MRP (₹' + prices.mrp.toFixed(2) + ')'; }
+  else if (base === 'DP') { basePrice = prices.dp; baseLabel = 'DP (₹' + prices.dp.toFixed(2) + ')'; }
+  else { basePrice = prices.mrp; baseLabel = 'MRP - No Discount'; }
+
+  document.getElementById('calc-base').textContent = baseLabel;
+  document.getElementById('calc-discount').textContent = disc + '%';
+
+  const sellingPrice = basePrice - (basePrice * disc / 100);
+  document.getElementById('calc-selling').textContent = '₹' + sellingPrice.toFixed(2);
+  document.getElementById('calc-total').textContent = '₹' + (sellingPrice * qty).toFixed(2);
+}
+
+document.getElementById('id_product').addEventListener('change', updateCalc);
+document.getElementById('id_quantity_sold').addEventListener('input', updateCalc);
+
+document.getElementById('id_discount_base').addEventListener('change', function() {
+  const discInput = document.getElementById('id_discount_percent');
+  if (this.value === 'NONE') {
+    discInput.value = '0.00';
+    discInput.disabled = true;
+  } else {
+    discInput.disabled = false;
+    if (discInput.value === '0.00') discInput.value = '';
+  }
+  updateCalc();
+});
+
+document.getElementById('id_discount_percent').addEventListener('input', updateCalc);
+document.getElementById('id_discount_percent').addEventListener('blur', function() {
+  if (this.value !== '') {
+    const v = Math.min(100, Math.max(0, parseFloat(this.value) || 0));
+    this.value = v.toFixed(2);
+    updateCalc();
+  }
+});
+
+// Set initial state for discount field based on current selection
+document.getElementById('id_discount_base').dispatchEvent(new Event('change'));
+updateCalc();
+
+// Re-enable discount field right before submit so its value is included in POST
+document.getElementById('sale-form').addEventListener('submit', function() {
+  document.getElementById('id_discount_percent').disabled = false;
+});
+</script>
+{% endblock %}

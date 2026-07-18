@@ -1,0 +1,160 @@
+{% extends 'stock/base.html' %}
+{% block title %}Sales – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">🧾 Sales Ledger</div><div class="page-sub">All sale transactions</div></div>
+  <a href="{% url 'sale_add' %}" class="btn btn-primary">+ Add Sale</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Filter by Column</div>
+    {% if q or customer_filter or product_filter or date_from or date_to or qty_min or qty_max or discount_base_filter or disc_min or disc_max %}
+      <a href="{% url 'sale_list' %}" class="btn btn-secondary btn-sm">✕ Clear All Filters</a>
+    {% endif %}
+  </div>
+  <form method="get" id="filter-form">
+    <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;background:#fafafa;border-bottom:1px solid var(--border);">
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Date Range</label>
+        <div style="display:flex;gap:6px;">
+          <input type="date" name="date_from" value="{{ date_from }}" class="search-input" style="flex:1;">
+          <input type="date" name="date_to" value="{{ date_to }}" class="search-input" style="flex:1;">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Customer</label>
+        <input class="search-input" list="customer-options" name="customer" value="{{ customer_filter }}" placeholder="🔍 Type or select…" style="width:100%;">
+        <datalist id="customer-options">
+          {% for c in all_customers %}<option value="{{ c }}">{% endfor %}
+        </datalist>
+      </div>
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Product</label>
+        <input class="search-input" list="product-options" id="product-name-search" placeholder="🔍 Type or select…" style="width:100%;">
+        <datalist id="product-options">
+          {% for p in all_products %}<option value="{{ p.name }}" data-id="{{ p.id }}">{% endfor %}
+        </datalist>
+        <input type="hidden" name="product" id="product-id-hidden" value="{{ product_filter }}">
+      </div>
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Qty Sold Range</label>
+        <div style="display:flex;gap:6px;">
+          <input type="number" min="0" name="qty_min" value="{{ qty_min }}" placeholder="Min" class="search-input" style="flex:1;">
+          <input type="number" min="0" name="qty_max" value="{{ qty_max }}" placeholder="Max" class="search-input" style="flex:1;">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Discount On</label>
+        <select name="discount_base" class="filter-select" style="width:100%;">
+          <option value="">All</option>
+          <option value="MRP" {% if discount_base_filter == 'MRP' %}selected{% endif %}>MRP</option>
+          <option value="DP" {% if discount_base_filter == 'DP' %}selected{% endif %}>DP</option>
+          <option value="NONE" {% if discount_base_filter == 'NONE' %}selected{% endif %}>None</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">Discount % Range</label>
+        <div style="display:flex;gap:6px;">
+          <input type="number" min="0" max="100" step="0.01" name="disc_min" value="{{ disc_min }}" placeholder="Min %" class="search-input" style="flex:1;">
+          <input type="number" min="0" max="100" step="0.01" name="disc_max" value="{{ disc_max }}" placeholder="Max %" class="search-input" style="flex:1;">
+        </div>
+      </div>
+
+    </div>
+    <div style="padding:12px 20px;display:flex;gap:10px;border-bottom:1px solid var(--border);">
+      <input class="search-input" name="q" value="{{ q }}" placeholder="🔍 General search (customer or product)…" style="flex:1;">
+      <button type="submit" class="btn btn-primary">Apply Filters</button>
+    </div>
+  </form>
+
+  <div class="card-header">
+    <div class="card-title">Sale Records</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="font-size:12px;color:var(--muted)">{{ sales.count }} records</span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="generateCombinedInvoice()">🧾 Generate Invoice for Selected</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all" onclick="toggleAll(this)"></th>
+          <th>Date</th><th>Customer</th><th>Product</th><th>Qty</th>
+          <th>Discount On</th><th>Disc %</th><th>Unit Price</th><th>Total</th>
+          <th>Received</th><th>Pending</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td><input type="checkbox" class="sale-checkbox" value="{{ s.id }}"></td>
+          <td>{{ s.date }}</td>
+          <td class="td-bold">{{ s.customer_name }}</td>
+          <td>{{ s.product.name }}</td>
+          <td style="text-align:center">{{ s.quantity_sold }}</td>
+          <td>
+            {% if s.discount_base == 'MRP' %}<span class="pill pill-mrp">MRP</span>
+            {% elif s.discount_base == 'DP' %}<span class="pill" style="background:#ede9fe;color:#6d28d9">DP</span>
+            {% else %}<span class="pill" style="background:#f3f4f6;color:var(--muted)">None</span>{% endif %}
+          </td>
+          <td style="text-align:center">{{ s.discount_percent }}%</td>
+          <td>₹{{ s.selling_price|floatformat:2 }}</td>
+          <td class="td-bold">₹{{ s.total_sale_value|floatformat:2 }}</td>
+          <td style="color:var(--ok)">₹{{ s.payment_received|floatformat:2 }}</td>
+          <td style="color:{% if s.payment_pending > 0 %}var(--danger){% else %}var(--text){% endif %}">₹{{ s.payment_pending|floatformat:2 }}</td>
+          <td>
+            <div class="actions">
+              <a href="{% url 'sale_invoice' s.pk %}" target="_blank" class="btn btn-secondary btn-sm">🧾 Invoice</a>
+              <a href="{% url 'sale_edit' s.pk %}" class="btn btn-secondary btn-sm">✏️</a>
+              <a href="{% url 'sale_delete' s.pk %}" class="btn btn-danger btn-sm">🗑️</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted)">No records found</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const PRODUCT_NAME_TO_ID = {};
+document.querySelectorAll('#product-options option').forEach(opt => {
+  PRODUCT_NAME_TO_ID[opt.value] = opt.getAttribute('data-id');
+});
+const productSearchInput = document.getElementById('product-name-search');
+const productHiddenInput = document.getElementById('product-id-hidden');
+
+{% if product_filter %}
+{% for p in all_products %}{% if p.id|stringformat:"s" == product_filter %}
+productSearchInput.value = "{{ p.name|escapejs }}";
+{% endif %}{% endfor %}
+{% endif %}
+
+productSearchInput.addEventListener('input', function() {
+  productHiddenInput.value = PRODUCT_NAME_TO_ID[this.value] || '';
+});
+
+function toggleAll(source) {
+  document.querySelectorAll('.sale-checkbox').forEach(cb => cb.checked = source.checked);
+}
+
+function generateCombinedInvoice() {
+  const ids = Array.from(document.querySelectorAll('.sale-checkbox:checked')).map(cb => cb.value);
+  if (ids.length === 0) {
+    alert('Please select at least one sale using the checkboxes to generate a combined invoice.');
+    return;
+  }
+  window.open('/sales/invoice/bulk/?ids=' + ids.join(','), '_blank');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'stock/base.html' %}
+{% block title %}Stock Alerts – Skinovate{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><div class="page-title">🔔 Stock Alerts</div><div class="page-sub">Live stock levels for all products</div></div>
+  <a href="{% url 'stockin_add' %}" class="btn btn-primary">+ Add Stock</a>
+</div>
+
+<div class="summary-grid">
+  <div class="summary-card red">
+    <div class="label">Out of Stock</div>
+    <div class="value">{{ out_count }}</div>
+    <div class="sub">Need immediate reorder</div>
+  </div>
+  <div class="summary-card gold">
+    <div class="label">Low Stock</div>
+    <div class="value">{{ low_count }}</div>
+    <div class="sub">Running low (≤5 units)</div>
+  </div>
+  <div class="summary-card green">
+    <div class="label">In Stock</div>
+    <div class="value">{{ ok_count }}</div>
+    <div class="sub">Healthy stock level</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Total Products</div>
+    <div class="value">{{ products|length }}</div>
+    <div class="sub">Tracked in system</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">All Products – Stock Status</div></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product Name</th>
+          <th>Current Stock</th>
+          <th>Visual Level</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td class="td-muted">{{ forloop.counter }}</td>
+          <td class="td-bold">{{ p.name }}</td>
+          <td style="text-align:center;font-weight:800;font-size:18px;
+            color:{% if p.current_stock <= 0 %}var(--danger){% elif p.current_stock <= 5 %}var(--warn){% else %}var(--ok){% endif %}">
+            {{ p.current_stock }}
+          </td>
+          <td>
+            {% if p.current_stock > 0 %}
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:120px;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;
+                  width:{% widthratio p.current_stock 50 100 %}%;
+                  background:{% if p.current_stock <= 5 %}var(--danger){% elif p.current_stock <= 10 %}var(--warn){% else %}var(--ok){% endif %};"></div>
+              </div>
+              <span style="font-size:12px;color:var(--muted)">{{ p.current_stock }} units</span>
+            </div>
+            {% else %}
+            <span style="font-size:12px;color:var(--danger)">No stock remaining</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.current_stock <= 0 %}
+              <span class="pill pill-out">⛔ OUT OF STOCK</span>
+            {% elif p.current_stock <= 5 %}
+              <span class="pill pill-low">⚠️ LOW STOCK</span>
+            {% else %}
+              <span class="pill pill-ok">✅ IN STOCK</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="actions">
+              <a href="{% url 'stockin_add' %}" class="btn btn-primary btn-sm">+ Add Stock</a>
+              <a href="{% url 'product_edit' p.pk %}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

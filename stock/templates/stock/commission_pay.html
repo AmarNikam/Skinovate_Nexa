@@ -1,0 +1,45 @@
+{% extends 'stock/base.html' %}
+{% block title %}Pay Commission{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">💳 Record Commission Payment</div>
+    <div class="page-sub">{{ mc.branch.name }} · {{ mc.month_name }} {{ mc.year }}</div>
+  </div>
+  <a href="{% url 'commission_branch_detail' mc.branch.pk %}" class="btn btn-secondary">← Back</a>
+</div>
+<div class="form-card" style="max-width:500px;">
+  <div style="background:#f9fafb;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+    <div><div class="td-muted">Branch</div><strong>{{ mc.branch.name }}</strong></div>
+    <div><div class="td-muted">Period</div><strong>{{ mc.month_name }} {{ mc.year }}</strong></div>
+    <div><div class="td-muted">Total Sales</div><strong>₹{{ mc.total_sales|floatformat:2 }}</strong></div>
+    <div><div class="td-muted">Commission Due</div><strong style="color:var(--brand)">₹{{ mc.commission_amount|floatformat:2 }}</strong></div>
+    <div><div class="td-muted">Already Paid</div><strong style="color:var(--ok)">₹{{ mc.amount_paid|floatformat:2 }}</strong></div>
+    <div><div class="td-muted">Still Pending</div><strong style="color:var(--danger)">₹{{ mc.amount_pending|floatformat:2 }}</strong></div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Amount Paid (₹) *</label>
+      {{ form.amount_paid }}
+      <div class="form-hint">Full amount: ₹{{ mc.commission_amount|floatformat:2 }}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Payment Date</label>
+      {{ form.payment_date }}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status *</label>
+      {{ form.status }}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      {{ form.notes }}
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button type="submit" class="btn btn-primary">✅ Save Payment</button>
+      <a href="{% url 'commission_branch_detail' mc.branch.pk %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

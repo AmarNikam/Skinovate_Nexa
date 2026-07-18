@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Skinovate{% endblock %}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+:root {
+  --brand:#2d6a4f;--brand-light:#e8f4ef;--accent:#b5883a;
+  --danger:#c0392b;--danger-light:#fdecea;--warn:#d97706;--warn-light:#fff7ed;
+  --ok:#16a34a;--ok-light:#f0fdf4;
+  --bg:#f7f5f2;--card:#fff;--text:#1a1a1a;--muted:#6b7280;
+  --border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+.sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--brand);display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.sidebar-logo{padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,.15);}
+.sidebar-logo .brand{font-size:20px;font-weight:800;color:#fff;}
+.sidebar-logo .tagline{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+.branch-indicator{padding:8px 14px;background:rgba(0,0,0,.2);margin:8px 10px;border-radius:8px;font-size:11px;color:rgba(255,255,255,.8);}
+.branch-indicator strong{display:block;color:#fff;font-size:12px;margin-bottom:1px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:rgba(255,255,255,.75);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s;}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:#fff;}
+.nav-item.owner-only{border-top:1px solid rgba(255,255,255,.1);margin-top:4px;padding-top:14px;}
+.nav-icon{font-size:15px;width:18px;text-align:center;}
+.nav-section{padding:8px 20px 4px;font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;font-weight:600;}
+.sidebar-footer{margin-top:auto;padding:14px 20px;font-size:11px;color:rgba(255,255,255,.4);border-top:1px solid rgba(255,255,255,.1);}
+.main{margin-left:230px;padding:28px 32px;min-height:100vh;}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:800;}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+.card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);border:1px solid var(--border);overflow:hidden;margin-bottom:24px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.card-title{font-size:15px;font-weight:700;}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.summary-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border);}
+.summary-card .label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.summary-card .value{font-size:26px;font-weight:800;margin-top:6px;}
+.summary-card .sub{font-size:12px;color:var(--muted);margin-top:4px;}
+.summary-card.green .value{color:var(--brand);}
+.summary-card.red .value{color:var(--danger);}
+.summary-card.gold .value{color:var(--accent);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--brand);color:#fff;}
+.btn-primary:hover{background:#235c42;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#a93226;}
+.btn-secondary{background:#f3f4f6;color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:#e5e7eb;}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-owner{background:rgba(181,136,58,.15);color:#a07030;border:1px solid rgba(181,136,58,.3);}
+.btn-owner:hover{background:rgba(181,136,58,.25);}
+.filter-bar{display:flex;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);background:#fafafa;flex-wrap:wrap;}
+.search-input,.form-input,.form-select,.form-textarea{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border .15s;background:#fff;width:100%;}
+.search-input:focus,.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--brand);}
+.search-input{width:auto;flex:1;min-width:180px;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:#f9fafb;text-align:left;padding:10px 16px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f3f4f6;}
+tbody tr:hover{background:#f9fafb;}
+tbody td{padding:11px 16px;vertical-align:middle;}
+.td-bold{font-weight:600;}
+.td-muted{color:var(--muted);font-size:12px;}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.pill-out{background:var(--danger-light);color:var(--danger);}
+.pill-low{background:var(--warn-light);color:var(--warn);}
+.pill-ok{background:var(--ok-light);color:var(--ok);}
+.pill-mrp{background:#e0f2fe;color:#0369a1;}
+.pill-sample{background:#ede9fe;color:#6d28d9;}
+.pill-branch{background:#fef3c7;color:#92400e;font-size:10px;}
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text);}
+.form-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-card{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:28px;max-width:800px;}
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;}
+.alert-success{background:var(--ok-light);color:var(--ok);border:1px solid #bbf7d0;}
+.alert-error{background:var(--danger-light);color:var(--danger);border:1px solid #fecaca;}
+.error-list{list-style:none;padding:0;margin-top:4px;}
+.error-list li{color:var(--danger);font-size:12px;}
+.actions{display:flex;gap:6px;align-items:center;}
+.stock-bar-wrap{width:80px;height:6px;background:#e5e7eb;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:6px;}
+.stock-bar{height:100%;border-radius:3px;}
+.filter-select{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;outline:none;cursor:pointer;}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">✦ Skinovate</div>
+    <div class="tagline">Inventory Management</div>
+  </div>
+
+  {% if user.is_authenticated %}
+  {% if profile %}
+    {% if profile.is_owner %}
+      <div class="branch-indicator">
+        <strong>👑 Owner View</strong>
+        {% if branch %}Viewing: {{ branch.name }}{% else %}All Branches{% endif %}
+      </div>
+    {% else %}
+      <div class="branch-indicator">
+        <strong>📍 {{ profile.branch.name }}</strong>
+        {{ profile.branch.location }}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  <div class="nav-section">Main</div>
+  <a class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="nav-icon">📊</span> Dashboard</a>
+  <a class="nav-item {% if 'stockin' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'stockin_list' %}"><span class="nav-icon">📦</span> Stock In</a>
+  <a class="nav-item {% if 'sale' in request.resolver_match.url_name and 'branch' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'sale_list' %}"><span class="nav-icon">🧾</span> Sales</a>
+  <a class="nav-item {% if request.resolver_match.url_name == 'stock_alert' %}active{% endif %}" href="{% url 'stock_alert' %}"><span class="nav-icon">🔔</span> Stock Alerts</a>
+  <a class="nav-item {% if 'product' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'product_list' %}"><span class="nav-icon">📋</span> Products</a>
+
+  {% if profile and profile.is_owner %}
+  <div class="nav-section" style="margin-top:8px;">Owner Controls</div>
+  <a class="nav-item {% if 'branch' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'branch_list' %}"><span class="nav-icon">🏢</span> Branches</a>
+  <a class="nav-item {% if 'commission' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'commission_dashboard' %}"><span class="nav-icon">💰</span> Commission</a>
+  {% else %}
+  <div class="nav-section" style="margin-top:8px;">My Branch</div>
+  <a class="nav-item {% if 'commission_my' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'commission_my_view' %}"><span class="nav-icon">💰</span> My Commission</a>
+  <a class="nav-item {% if 'branch_my_details' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'branch_my_details' %}"><span class="nav-icon">🏦</span> My Bank Details</a>
+  {% endif %}
+
+  <div class="sidebar-footer">
+    <div style="margin-bottom:4px;">{{ user.username }}
+      {% if profile %}<span style="color:rgba(255,255,255,.5);font-size:10px;">· {{ profile.role }}</span>{% endif %}
+    </div>
+    <a href="{% url 'logout' %}" style="color:rgba(255,255,255,.6);text-decoration:underline;">Logout</a>
+  </div>
+  {% endif %}
+</nav>
+<main class="main">
+  {% for msg in messages %}
+  <div class="alert alert-{% if 'error' in msg.tags %}error{% else %}success{% endif %}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
