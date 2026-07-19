@@ -52,7 +52,8 @@ USE_TZ = True
 # ======================== 3 line added after whole code for make it live
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # ========================
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
