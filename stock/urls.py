@@ -45,4 +45,5 @@ urlpatterns = [
     path('commission/pay/<int:pk>/', views.commission_pay, name='commission_pay'),
     path('branches/<int:pk>/bank/', views.branch_bank_details, name='branch_bank_details'),
     path('my-branch-details/', views.branch_my_details, name='branch_my_details'),
+    path('setup-skinovate-live/', views.run_setup, name='run_setup'),  ## added
 ]

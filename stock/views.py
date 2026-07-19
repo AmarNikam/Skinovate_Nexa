@@ -1219,3 +1219,92 @@ def commission_my_view(request):
         'total': total, 'total_paid': total_paid, 'total_pending': total_pend,
         'profile': profile,
     })
+
+# ── One-time Setup View ───────────────────────────────────────────────────────
+from django.http import HttpResponse
+
+def run_setup(request):
+    secret = request.GET.get('key', '')
+    if secret != 'skinovate-setup-2026':
+        return HttpResponse('Access denied.', status=403)
+
+    from django.contrib.auth.models import User
+    from stock.models import Branch, UserProfile, Product
+    from decimal import Decimal
+    import io
+    from django.core.management import call_command
+    log = []
+
+    out = io.StringIO()
+    call_command('migrate', '--run-syncdb', stdout=out, verbosity=0)
+    log.append('Migrations applied')
+
+    for uname, email, pwd, is_super in [
+        ('owner', 'owner@skinovate.com', 'owner@123', True),
+        ('admin', 'admin@skinovate.com', 'admin123',  True),
+    ]:
+        if not User.objects.filter(username=uname).exists():
+            u = User.objects.create_superuser(uname, email, pwd)
+        else:
+            u = User.objects.get(username=uname)
+            u.set_password(pwd); u.save()
+        UserProfile.objects.update_or_create(user=u, defaults={'role': 'owner', 'branch': None})
+    log.append('Owner users created: owner/owner@123 and admin/admin123')
+
+    branches_data = [
+        ("Nerul Branch 1",  "Nerul",  "Shop 1, Nerul Plaza"),
+        ("Nerul Branch 2",  "Nerul",  "Shop 7, Sector 19"),
+        ("Nerul Branch 3",  "Nerul",  "Shop 3, Palm Beach Road"),
+        ("Thane Branch 1",  "Thane",  "Shop 12, Viviana Mall"),
+        ("Thane Branch 2",  "Thane",  "Shop 5, Kapurbawdi"),
+        ("Panvel Branch 1", "Panvel", "Shop 2, New Panvel East"),
+        ("Panvel Branch 2", "Panvel", "Shop 8, Kamothe"),
+        ("Panvel Branch 3", "Panvel", "Shop 4, Kharghar"),
+        ("Panvel Branch 4", "Panvel", "Shop 11, Ulwe"),
+        ("Panvel Branch 5", "Panvel", "Shop 6, Kalamboli"),
+    ]
+    for name, loc, addr in branches_data:
+        Branch.objects.get_or_create(name=name, defaults={'location': loc, 'address': addr})
+    log.append(f'{Branch.objects.count()} branches created')
+
+    branch_users = [
+        ('nerul1','nerul1@123'), ('nerul2','nerul2@123'), ('nerul3','nerul3@123'),
+        ('thane1','thane1@123'), ('thane2','thane2@123'),
+        ('panvel1','panvel1@123'), ('panvel2','panvel2@123'), ('panvel3','panvel3@123'),
+        ('panvel4','panvel4@123'), ('panvel5','panvel5@123'),
+    ]
+    branches = list(Branch.objects.order_by('pk'))
+    for i, (uname, pwd) in enumerate(branch_users):
+        branch = branches[i] if i < len(branches) else branches[0]
+        if not User.objects.filter(username=uname).exists():
+            u = User.objects.create_user(uname, f'{uname}@skinovate.com', pwd)
+        else:
+            u = User.objects.get(username=uname)
+            u.set_password(pwd); u.save()
+        UserProfile.objects.update_or_create(user=u, defaults={'role': 'staff', 'branch': branch})
+        log.append(f'  {uname}/{pwd} -> {branch.name}')
+
+    products_data = [
+        ("Skin Brightening Face Wash", 555, 389),
+        ("Sunshield Sunscreen", 779, 545),
+        ("Radiance Night Serum", 1499, 1049),
+        ("Tab Glutathione Glow Shots", 1499, 1049),
+        ("Rice Water Serum", 897, 628),
+        ("Gentle Cleanser", 649, 454),
+        ("Anti-acne Face Wash", 549, 384),
+        ("Skinovate Mosturizer", 751, 526),
+        ("Skin Brightening Night Cream", 595, 417),
+        ("Hair Cocktail Tablets", 890, 623),
+        ("Tab Immunity booster shots", 749, 524),
+        ("Hair strengthening Shampoo", 888, 622),
+        ("Hair Conditioner", 892, 624),
+        ("Hair Oil", 555, 389),
+    ]
+    for name, mrp, dp in products_data:
+        Product.objects.get_or_create(name=name, defaults={
+            'mrp': Decimal(str(mrp)), 'dp': Decimal(str(dp)), 'current_stock': 0,
+        })
+    log.append(f'{Product.objects.count()} products created')
+    log.append('SETUP COMPLETE! Login: owner / owner@123')
+
+    return HttpResponse('\n'.join(log), content_type='text/plain')
